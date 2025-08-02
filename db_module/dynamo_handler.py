@@ -18,11 +18,6 @@ books_table = dynamodb.Table('ReadingTrackerBooks')
 users_table = dynamodb.Table('ReadingTrackerUsers')
 counters_table = dynamodb.Table('ReadingTrackerCounters')
 
-# Check if a user exists in the users table
-def is_valid_user(user_id):
-    response = users_table.get_item(Key={"user_id": user_id})
-    return "Item" in response
-
 # Fetch user details from the database
 def get_user_details(user_id):
     try:
@@ -43,7 +38,7 @@ def register_user(user_id, name, email):
                 "recommendations": [],
                 "reading_history": [],
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "welcome_sent": False  # ✅ NEW FLAG
+                "welcome_sent": False
             },
             ConditionExpression='attribute_not_exists(user_id)'  # Prevent overwrite
         )
@@ -251,7 +246,7 @@ def generate_book_id():
         else:
             raise e
     except Exception as e:
-        print(f"‼️  Error generating book ID...")
+        print(f"Error generating book ID...")
         try:
             response = books_table.scan(ProjectionExpression="book_id")
             book_ids = [int(item['book_id'][1:]) for item in response['Items'] if item['book_id'].startswith('B')]
@@ -259,14 +254,3 @@ def generate_book_id():
             return f"B{new_id}"
         except:
             return f"B{int(datetime.now().timestamp())}"
-
-# Get the current value of the global book ID counter
-def get_current_book_counter():
-    try:
-        response = counters_table.get_item(Key={'counter_name': 'book_id_counter'})
-        if 'Item' in response:
-            return response['Item']['current_value']
-        return 1000
-    except Exception as e:
-        print(f"‼️  Error getting counter...")
-        return 1000
