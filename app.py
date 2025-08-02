@@ -4,24 +4,22 @@ import re
 from decimal import Decimal, InvalidOperation
 import html
 
-# Import your existing modules
+# Import custom modules for database handling and tracker logic
 from db_module.dynamo_handler import (
     add_book_to_db, edit_book, delete_book, get_book_details,
     search_books, filter_books, get_user_history,
     generate_user_id, get_user_details, register_user
 )
-
 from reading_tracker.tracker import (
     get_all_books_for_user,
     update_book_progress_in_db,
     archive_single_book_in_db,
     unarchive_single_book_in_db
 )
-
 from dashboard.dashboard_cli import show_dashboard
 from dashboard.report_generator import generate_pdf_summary
 
-# Page configuration
+# Configure the Streamlit page settings
 st.set_page_config(
     page_title="SmartReads",
     page_icon="📚",
@@ -29,6 +27,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Inject custom CSS for a loading animation
 st.markdown("""
     <style>
         @keyframes pulse {
@@ -46,17 +45,18 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Utility functions
+# Utility function to validate the Book ID format (e.g., B1234)
 def is_valid_book_id_format(book_id):
     pattern = re.compile(r'^B\d{4}$')
     return bool(pattern.match(book_id))
 
+# Utility function to validate the User ID format (e.g., U1234)
 def is_valid_user_id_format(user_id):
     pattern = re.compile(r'^U\d{4}$')
     return bool(pattern.match(user_id))
 
+# Formats book data for clean display in the UI
 def format_book_for_display(book):
-    """Format book data for display"""
     rating_val = book.get('rating')
     rating_display = float(rating_val) if rating_val is not None else "N/A"
     
@@ -74,7 +74,7 @@ def format_book_for_display(book):
         "Archived": "Yes" if book.get('archived') else "No"
     }
 
-# Initialize session state
+# Initialize session state variables for user session management
 if 'user_id' not in st.session_state:
     st.session_state.user_id = None
 if 'user_name' not in st.session_state:
@@ -82,9 +82,9 @@ if 'user_name' not in st.session_state:
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
+# Displays the login and registration page
 def show_login():
-    # --- Sidebar Content ---
-    # All the informational content is now placed in the native sidebar
+    # Render the sidebar with information about the application
     with st.sidebar:        
         st.header("💡 About Us")
         st.write(
@@ -96,7 +96,8 @@ def show_login():
         st.write(
             "We deliver a smart, cloud-powered platform that lets users log books, track reading progress and receive personalized recommendations - making reading organized, engaging and effortlessly managed!"
         )
-
+        
+        # Add a footer to the bottom of the sidebar
         st.markdown(
             """
             <style>
@@ -104,7 +105,7 @@ def show_login():
                     position: fixed;
                     bottom: 20px;
                     left: 20px;
-                    width: 270px; /* Adjust width as needed */
+                    width: 270px;
                     font-size: 1rem;
                     font-style: italic;
                     color: #888;
@@ -118,11 +119,11 @@ def show_login():
             unsafe_allow_html=True
         )
 
-    # --- Main Page Content (Login Forms) ---
+    # Render the main page content with login/registration forms
     st.markdown("<h1 style='text-align: center;'>📚 Welcome to SmartReads!</h1>", unsafe_allow_html=True)
-
     col1, col2 = st.columns([0.5, 0.5])
         
+    # Column for existing user login
     with col1:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
@@ -130,11 +131,12 @@ def show_login():
         user_id_input = st.text_input("Enter your User ID (e.g. U1001):", key="login_user_id")
         st.markdown("<br>", unsafe_allow_html=True)
         
+        # Center the login button
         _, login_button_col, _ = st.columns([1, 1, 1])
         with login_button_col:
-            # The button is placed here, and its clicked state is captured.
             login_clicked = st.button("Login", key="login_btn", use_container_width=True)
 
+        # Handle the login logic when the button is clicked
         if login_clicked:
             if user_id_input:
                 user_id_upper = user_id_input.strip().upper()
@@ -145,97 +147,87 @@ def show_login():
                         st.session_state.user_name = user_details.get("name", "User")
                         st.session_state.logged_in = True
                         st.session_state.show_loading_screen = True
-                        st.rerun()
+                        st.rerun() # Rerun the script to show the main app
                     else:
                         st.error("User ID not found!")
                 else:
                     st.error("Invalid User ID format!")
             else:
                 st.error("Please enter a User ID!")
-        
+    
+    # Column for new user registration
     with col2:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
         st.subheader("✨ New User")
         name_input = st.text_input("Enter your name:", key="register_name")
-        # --- NEW: Email input field ---
         email_input = st.text_input("Enter your email:", key="register_email")
         st.markdown("<br>", unsafe_allow_html=True)
 
+        # Center the create account button
         _, create_account_button_col, _ = st.columns([1, 1, 1])
         with create_account_button_col:
-            # The button is placed here, and its clicked state is captured.
             create_account_clicked = st.button("Create Account", key="register_btn", use_container_width=True)
 
+        # Handle the registration logic when the button is clicked
         if create_account_clicked:
             name = name_input.strip()
             email = email_input.strip()
 
-            # --- MODIFIED: Validate both name and email ---
             if name and email:
-                # You might want to add more robust email validation
-                if "@" in email and "." in email:
+                if "@" in email and "." in email: # Basic email validation
                     user_id = generate_user_id()
-                    # --- MODIFIED: Pass email to your registration function ---
-                    # Ensure your register_user function is updated to accept and store the email
                     register_user(user_id, name, email)
 
                     st.success("Account created! Check your email for a welcome message with your User ID.")
                     st.info("Please confirm the subscription in the first email from AWS to receive future notifications.")
 
-                    # Log the user in immediately after registration
+                    # Automatically log the new user in
                     st.session_state.user_id = user_id
                     st.session_state.user_name = name
                     st.session_state.logged_in = True
                     st.session_state.show_loading_screen = True
-                    st.rerun()
+                    st.rerun() # Rerun the script to show the main app
                 else:
                     st.error("Please enter a valid email address!")
             else:
                 st.error("Please enter both your name and email!")  
 
+# Main application function, shown after successful login
 def main_app():
-    # Sidebar
+    # Render the sidebar for navigation
     with st.sidebar:
         st.title(f"👋 Hello, {st.session_state.user_name}!")
         st.write(f"**User ID:** {st.session_state.user_id}")
 
-        # Make logout button full-width
+        # Logout button
         if st.button("🚪 Logout", use_container_width=True):
             st.session_state.show_logout_screen = True
             st.rerun()
 
         st.divider()
-
         st.markdown("### 📍 Navigate to:")
 
+        # Define navigation options
         nav_options = [
-            ("📊 Dashboard", "dashboard"),
-            ("➕ Add Book", "add"),
-            ("✏️ Edit Book", "edit"),
-            ("🗑️ Delete Book", "delete"),
-            ("🔍 Search Books", "search"),
-            ("🔎 Filter Books", "filter"),
-            ("📖 Reading History", "history"),
-            ("💡 Recommendations", "recommend"),
-            ("📈 Update Progress", "progress"),
-            ("⏰ View Deadlines", "deadlines"),
-            ("📦 Archive Book", "archive")
+            ("📊 Dashboard", "dashboard"), ("➕ Add Book", "add"), ("✏️ Edit Book", "edit"),
+            ("🗑️ Delete Book", "delete"), ("🔍 Search Books", "search"), ("🔎 Filter Books", "filter"),
+            ("📖 Reading History", "history"), ("💡 Recommendations", "recommend"),
+            ("📈 Update Progress", "progress"), ("⏰ View Deadlines", "deadlines"), ("📦 Archive Book", "archive")
         ]
 
-        # Initialize selected page
+        # Initialize the selected page to dashboard
         if 'selected_page' not in st.session_state:
             st.session_state.selected_page = "dashboard"
 
-        # Full-width buttons for each navigation option
+        # Create full-width navigation buttons
         for label, value in nav_options:
             if st.button(label, use_container_width=True):
                 st.session_state.selected_page = value
                 st.rerun()
 
-    # Page rendering
+    # Render the selected page based on user navigation
     page = st.session_state.selected_page
-
     if page == "dashboard":
         show_dashboard()
     elif page == "add":
@@ -259,10 +251,11 @@ def main_app():
     elif page == "archive":
         show_archive_book()
 
+# Page for adding a new book
 def show_add_book():
     st.title("➕ Add New Book")
 
-    # --- State Initialization ---
+    # Initialize session state for the add book form fields
     if "add_title" not in st.session_state:
         st.session_state.add_title = ""
     if "add_author" not in st.session_state:
@@ -280,47 +273,45 @@ def show_add_book():
     if "add_pages_read" not in st.session_state:
         st.session_state.add_pages_read = 0
 
-    # --- Callback Functions ---
+    # Callback to handle the logic of adding a book
     def _handle_add_book():
         title = st.session_state.add_title.strip()
         author = st.session_state.add_author.strip()
         total_pages = st.session_state.add_total_pages
         pages_read = st.session_state.add_pages_read
 
-        # ✅ Validations
+        # Perform validation checks
         if not title or not author:
             st.error("Title and Author are required fields!")
             return
-
         if total_pages is None or str(total_pages).strip() == "" or int(total_pages) <= 0:
             st.error("Total Pages must be greater than or equal to 1!")
             return
-
         if pages_read > total_pages:
             st.error("Pages read cannot be greater than total pages!")
             return
 
+        # Prepare book data for database entry
         book_data = {
-            "title": title,
-            "author": author,
+            "title": title, "author": author,
             "genre": st.session_state.add_genre.strip() if st.session_state.add_genre else None,
             "rating": Decimal(str(st.session_state.add_rating)) if st.session_state.add_rating else None,
-            "status": st.session_state.add_status.lower(),
-            "tags": st.session_state.add_tags.strip(),
-            "total_pages": int(total_pages),
-            "pages_read": int(pages_read)
+            "status": st.session_state.add_status.lower(), "tags": st.session_state.add_tags.strip(),
+            "total_pages": int(total_pages), "pages_read": int(pages_read)
         }
 
+        # Attempt to add the book to the database
         try:
             success = add_book_to_db(st.session_state.user_id, book_data)
             if success:
                 st.success("Book added successfully!")
-                _handle_cancel_add()
+                _handle_cancel_add() # Clear form on success
             else:
                 st.error("This book already exists in your reading list!")
         except Exception:
             st.error("An unexpected error occurred...")
 
+    # Callback to clear the add book form fields
     def _handle_cancel_add():
         st.session_state.add_title = ""
         st.session_state.add_author = ""
@@ -331,13 +322,10 @@ def show_add_book():
         st.session_state.add_total_pages = 1
         st.session_state.add_pages_read = 0
 
-    # --- UI Elements ---
+    # UI layout for the add book form
     st.markdown("""
-        <style>
-            .stButton>button { display: block; margin: 0 auto; }
-        </style>
+        <style> .stButton>button { display: block; margin: 0 auto; } </style>
     """, unsafe_allow_html=True)
-
     col1, col2 = st.columns(2)
 
     with col1:
@@ -347,34 +335,34 @@ def show_add_book():
         st.selectbox("Rating", [None, 1, 2, 3, 4, 5],
                      format_func=lambda x: "Select rating" if x is None else f"{x} ⭐",
                      key="add_rating")
-
     with col2:
         st.selectbox("Status *", ["To-read", "Reading", "Completed"], key="add_status")
         st.text_input("Tags", key="add_tags")
-        # Removed min_value to allow manual validation
         st.number_input("Total Pages *", key="add_total_pages", step=1, format="%d")
         st.number_input("Pages Read", min_value=0, key="add_pages_read", step=1, format="%d")
 
-    # --- Real-time Validation ---
+    # Real-time validation for pages read
     pages_read_invalid = st.session_state.add_pages_read > st.session_state.add_total_pages
     if pages_read_invalid:
         st.warning("Pages read cannot be greater than total pages!")
 
-    # --- Action Buttons ---
+    # Action buttons for the form
     btn_col1, btn_col2 = st.columns(2)
     with btn_col1:
         st.button("✅ Add", on_click=_handle_add_book, type="primary", disabled=pages_read_invalid)
     with btn_col2:
         st.button("❌ Cancel", on_click=_handle_cancel_add)
 
+# Page for editing an existing book
 def show_edit_book():
     st.title("✏️ Edit Book")
     st.markdown("<br>", unsafe_allow_html=True)
 
+    # Initialize session state for edit functionality
     if 'edit_book_input' not in st.session_state:
         st.session_state.edit_book_input = ""
 
-    # Auto-fetch if book ID is pre-filled but book not yet loaded
+    # Automatically fetch book details if an ID is present in the session state
     if st.session_state.edit_book_input and 'edit_book' not in st.session_state:
         book_id = st.session_state.edit_book_input.strip().upper()
         if is_valid_book_id_format(book_id):
@@ -383,24 +371,21 @@ def show_edit_book():
                 st.session_state.edit_book = book
                 st.session_state.edit_book_id = book_id
 
-    # --- Callbacks ---
-
+    # Callback to reset the input widget when the field to edit changes
     def _on_field_change():
-        """Resets the input widget's state when the field to edit is changed."""
         if 'edit_new_value_input' in st.session_state:
             del st.session_state['edit_new_value_input']
 
+    # Callback to find a book based on the provided Book ID
     def _handle_find_book():
-        # Clear previous edit session
         st.session_state.pop("edit_book", None)
         st.session_state.pop("edit_book_id", None)
-        _on_field_change()  # Also clear the input value
+        _on_field_change()
 
         book_id = st.session_state.edit_book_input.strip().upper()
         if not book_id:
             st.warning("Please enter a Book ID!")
             return
-
         if not is_valid_book_id_format(book_id):
             st.error("Invalid Book ID format!")
             st.session_state.edit_book_input = ""
@@ -413,27 +398,24 @@ def show_edit_book():
                 st.session_state.edit_book = book
                 st.session_state.edit_book_id = book_id
 
+    # Callback to handle the book update logic
     def _handle_update_book():
-        """Handles the logic to update a book field."""
-        # Get current state from session
         field = st.session_state.edit_field_select
         new_value = st.session_state.edit_new_value_input
         book = st.session_state.edit_book
-        
         final_value = new_value
         updated_fields = {}
 
-        # --- Step 1: Sanitize text input ---
-        if field in ["title", "author", "genre", "tags"]:
-            if isinstance(new_value, str) and not new_value.strip():
-                final_value = None
+        # Sanitize text input
+        if field in ["title", "author", "genre", "tags"] and isinstance(new_value, str) and not new_value.strip():
+            final_value = None
 
-        # --- Step 2: Validate required fields ---
+        # Validate required fields
         if field in ["title", "author"] and final_value is None:
             st.error(f"{field.capitalize()} is a required field!")
             return
 
-        # --- Step 3: Process value and create the update payload ---
+        # Process the new value and prepare the update payload
         try:
             if field == "total_pages":
                 if final_value is None:
@@ -443,96 +425,82 @@ def show_edit_book():
                 if total_pages_val <= 0:
                     st.error("Total Pages must be greater than or equal to 1!")
                     return
-
                 pages_read = book.get('pages_read', 0)
                 if total_pages_val < pages_read:
                     st.error(f"New total pages ({total_pages_val}) cannot be less than pages read ({pages_read})!")
                     return
-                
+                # Recalculate progress percentage
                 new_percent = round(Decimal(pages_read) / Decimal(total_pages_val) * 100, 2)
                 updated_fields = {'total_pages': total_pages_val, 'progress_percent': new_percent}
-            
             else:
-                # For all other fields (title, author, etc.)
                 updated_fields = {field: final_value}
-
         except (ValueError, TypeError, InvalidOperation):
             st.error(f"Invalid value provided for {field}. Please check your input.")
             return
 
-        # --- Step 4: Call the database handler to commit changes ---
+        # Call the database handler to apply the changes
         try:
             edit_book(st.session_state.user_id, st.session_state.edit_book_id, updated_fields)
             st.success("Book edited successfully!")
-            # Clean up the session state
             st.session_state.pop("edit_book", None)
             st.session_state.pop("edit_book_id", None)
             st.session_state.edit_book_input = ""
-
         except Exception as e:
             st.error(f"Update failed. Database error: {e}")
             return
 
+    # Callback to cancel the edit operation and clear the form
     def _handle_cancel_edit():
         st.session_state.pop("edit_book", None)
         st.session_state.pop("edit_book_id", None)
         st.session_state.edit_book_input = ""
 
-    # --- UI Elements ---
+    # UI for finding a book to edit
     st.text_input("Book ID", placeholder="e.g. B1001", key="edit_book_input")
     st.button("🔍 Find Book", on_click=_handle_find_book)
 
+    # If a book is found, display the editing form
     if 'edit_book' in st.session_state:
         book = st.session_state.edit_book
         st.success(f"Editing: {book.get('title')} by {book.get('author')}")
 
-        # MODIFIED: Removed "rating" from the options
         field_options = {
             "title": "Title", "author": "Author", "genre": "Genre",
             "tags": "Tags", "total_pages": "Total Pages"
         }
-
         field = st.selectbox(
-            "Field to Edit",
-            options=[None] + list(field_options.keys()),
+            "Field to Edit", options=[None] + list(field_options.keys()),
             format_func=lambda key: "Choose an option" if key is None else field_options[key],
-            key="edit_field_select",
-            on_change=_on_field_change
+            key="edit_field_select", on_change=_on_field_change
         )
-
+        
+        # Display the correct input widget based on the selected field
         if field:
             current_value = book.get(field, "")
-
-            # MODIFIED: Removed the entire UI block for editing the rating
             if field == "total_pages":
-                st.number_input(
-                    "New Total Pages",
-                    placeholder=f"Current: {current_value or 'Not Set'}",
-                    key="edit_new_value_input",
-                    step=1,
-                    format="%d"
-                )
+                st.number_input("New Total Pages", placeholder=f"Current: {current_value or 'Not Set'}",
+                                key="edit_new_value_input", step=1, format="%d")
             else:
-                st.text_input(
-                    f"New {field_options[field]}",
-                    placeholder=f"Current: {current_value or 'Not Set'}",
-                    key="edit_new_value_input"
-                )
+                st.text_input(f"New {field_options[field]}", placeholder=f"Current: {current_value or 'Not Set'}",
+                              key="edit_new_value_input")
 
+            # Action buttons for editing
             _, col2, _, col4, _ = st.columns(5)
             with col2:
                 st.button("💾 Edit", on_click=_handle_update_book, type="primary", use_container_width=True)
             with col4:
                 st.button("❌ Cancel", on_click=_handle_cancel_edit, use_container_width=True)
 
+# Page for deleting a book
 def show_delete_book():
     st.title("🗑️ Delete Book")
     st.markdown("<br>", unsafe_allow_html=True)
 
+    # Initialize session state for delete functionality
     if 'delete_book_input' not in st.session_state:
         st.session_state.delete_book_input = ""
 
-    # 🔁 Auto-load book if Book ID is passed from display_books_table_edit
+    # Auto-load book details if an ID is passed to the session
     if st.session_state.delete_book_input and 'delete_book' not in st.session_state:
         book_id = st.session_state.delete_book_input.strip().upper()
         if is_valid_book_id_format(book_id):
@@ -541,10 +509,7 @@ def show_delete_book():
                 st.session_state.delete_book = book
                 st.session_state.delete_book_id = book_id
 
-
-    # --- Callbacks ---
-    # These functions run before the page rerenders, allowing safe state changes.
-
+    # Callback to find a book to delete
     def _handle_find_book():
         if 'delete_book' in st.session_state:
             del st.session_state.delete_book
@@ -552,11 +517,9 @@ def show_delete_book():
             del st.session_state.delete_book_id
         
         book_id = st.session_state.delete_book_id_input.strip().upper()
-        
         if not book_id:
             st.warning("Please enter a Book ID!")
             return
-
         if not is_valid_book_id_format(book_id):
             st.error("Invalid Book ID format!")
             st.session_state.delete_book_id_input = ""
@@ -569,6 +532,7 @@ def show_delete_book():
                 st.session_state.delete_book = book
                 st.session_state.delete_book_id = book_id
     
+    # Callback to confirm and execute the deletion
     def _handle_book_delete():
         try:
             delete_book(st.session_state.user_id, st.session_state.delete_book_id)
@@ -579,49 +543,34 @@ def show_delete_book():
         except Exception:
             st.error(f"Error deleting book...")
 
-    # New callback specifically for the Cancel button
+    # Callback to cancel the deletion and clear the form
     def _handle_cancel_delete():
-        # Clear all related session state variables
         if 'delete_book' in st.session_state:
             del st.session_state.delete_book
         if 'delete_book_id' in st.session_state:
             del st.session_state.delete_book_id
-            
-        # Clear both the manual input and the redirect input state
         st.session_state.delete_book_id_input = ""
         st.session_state.delete_book_input = ""
 
-
-    # --- UI Elements ---
-
-    st.text_input(
-        "Book ID",
-        placeholder="e.g. B1001",
-        key="delete_book_id_input"
-    )
-
+    # UI for finding a book to delete
+    st.text_input("Book ID", placeholder="e.g. B1001", key="delete_book_id_input")
     st.button("🔍 Find Book", on_click=_handle_find_book)
 
+    # If a book is found, show confirmation buttons
     if 'delete_book' in st.session_state:
         book = st.session_state.delete_book
         st.warning(f"Deleting: {book.get('title')} by {book.get('author')}")
 
         _, col2, _, col4, _ = st.columns(5)
         with col2:
-            st.button(
-                "🗑️ Delete",
-                type="primary",
-                on_click=_handle_book_delete,
-                use_container_width=True
-            )
+            st.button("🗑️ Delete", type="primary", on_click=_handle_book_delete, use_container_width=True)
         with col4:
-            # The Cancel button now uses its own dedicated on_click callback
             st.button("❌ Cancel", on_click=_handle_cancel_delete, use_container_width=True)
 
+# Page for searching books by title or author
 def show_search_books():
     st.title("🔍 Search Books")
     st.markdown("<br>", unsafe_allow_html=True)
-    
     keyword = st.text_input("Search by title or author", placeholder="Enter keyword (case-sensitive)")
     
     if st.button("🔍 Search"):
@@ -632,10 +581,10 @@ def show_search_books():
         else:
             st.info("No books found!")
 
+# Page for filtering books by genre, rating, or status
 def show_filter_books():
     st.title("🔎 Filter Books")
     st.markdown("<br>", unsafe_allow_html=True) 
-    
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -648,140 +597,100 @@ def show_filter_books():
                              format_func=lambda x: "Any status" if x is None else x.capitalize())
     
     if st.button("🔎 Apply"):
-        results = filter_books(
-            st.session_state.user_id,
-            genre.strip() if genre.strip() else None,
-            str(rating) if rating else None,
-            status.lower() if status else None
-        )
-        
+        results = filter_books(st.session_state.user_id,
+                               genre.strip() if genre.strip() else None,
+                               str(rating) if rating else None,
+                               status.lower() if status else None)
         if results:
             st.success(f"Found {len(results)} book(s)...")
             display_books_table(results)
         else:
             st.info("No books match your filters!")
 
+# Page to display the user's complete reading history
 def show_reading_history():
     st.title("📖 Reading History")
     st.markdown("<br>", unsafe_allow_html=True)
-    
     history = get_user_history(st.session_state.user_id)
 
     if history:
-        # Sort by Book ID (e.g., "B1001", "B1002", ...)
         history_sorted = sorted(history, key=lambda b: b.get("book_id", ""))
         st.success(f"Showing {len(history_sorted)} book(s) from your history...")
         display_books_table_edit(history_sorted)
     else:
         st.info("No reading history found!")
 
+# Page to display personalized book recommendations
 def show_recommendations():
     st.title("💡 Personalized Recommendations")
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Card styles: fixed height for visual consistency + clamped title
+    # CSS for styling the recommendation cards
     card_css = """
     <style>
         .book-card {
-            background-color: #262730;
-            border: 1px solid #3c3d44;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 15px 0;
-            height: 200px; /* Uniform height */
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: border-color 0.3s;
-            overflow: hidden; /* Prevent content from spilling out */
+            background-color: #262730; border: 1px solid #3c3d44; border-radius: 8px;
+            padding: 20px; margin: 15px 0; height: 200px; display: flex;
+            flex-direction: column; justify-content: space-between;
+            transition: border-color 0.3s; overflow: hidden;
         }
         .book-card:hover { border-color: #4A90E2; }
-
         .book-card h4 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #FAFAFA;
-            margin: 0 0 10px 0;
-
-            /* Clamp title to 2 lines with ellipsis */
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            word-wrap: break-word;
+            font-size: 1.1rem; font-weight: 600; color: #FAFAFA; margin: 0 0 10px 0;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden; text-overflow: ellipsis; word-wrap: break-word;
         }
-
         .book-card .author {
-            font-style: italic;
-            font-size: 0.95rem;
-            color: #A0A0A5;
-            margin: 0;
-
-            /* Keep author to one line with ellipsis if needed */
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
+            font-style: italic; font-size: 0.95rem; color: #A0A0A5; margin: 0;
+            overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
         }
-
         .book-card .rating {
-            font-size: 0.9rem;
-            color: #FFC107;
-            font-weight: 500;
-            margin-top: 10px;
+            font-size: 0.9rem; color: #FFC107; font-weight: 500; margin-top: 10px;
         }
     </style>
     """
     st.markdown(card_css, unsafe_allow_html=True)
 
+    # Fetch and display recommendations
     user_details = get_user_details(st.session_state.user_id)
     recommendations = user_details.get('recommendations', [])
 
     if recommendations:
         st.success(f"Based on your reading history, here are {len(recommendations)} recommendations...")
-
         num_columns = 3
         for i in range(0, len(recommendations), num_columns):
             cols = st.columns(num_columns)
             row_recs = recommendations[i:i + num_columns]
-
             for j, rec in enumerate(row_recs):
                 with cols[j]:
-                    raw_title = rec.get('title', 'N/A')
-                    raw_author = rec.get('author', 'N/A')
-                    avg_rating = rec.get('avg_rating')
-
-                    title = html.escape(raw_title)
-                    author = html.escape(raw_author)
-
+                    # Escape HTML to prevent injection vulnerabilities
+                    title = html.escape(rec.get('title', 'N/A'))
+                    author = html.escape(rec.get('author', 'N/A'))
                     try:
-                        rating_text = f"{float(avg_rating):.2f}"
+                        rating_text = f"{float(rec.get('avg_rating')):.2f}"
                     except (ValueError, TypeError):
                         rating_text = "N/A"
-
+                    # Render the book card using HTML
                     card_html = f"""
                     <div class="book-card">
-                        <div>
-                            <h4 title="{title}">{title}</h4>
-                            <p class="author" title="by {author}">by {author}</p>
-                        </div>
-                        <div>
-                            <p class="rating">⭐ {rating_text} Average Rating</p>
-                        </div>
+                        <div> <h4 title="{title}">{title}</h4> <p class="author" title="by {author}">by {author}</p> </div>
+                        <div> <p class="rating">⭐ {rating_text} Average Rating</p> </div>
                     </div>
                     """
                     st.markdown(card_html, unsafe_allow_html=True)
     else:
         st.error("No recommendations available! Read more books...")
 
+# Page for updating reading progress for a book
 def show_update_progress():
     st.title("📈 Update Reading Progress")
     st.markdown("<br>", unsafe_allow_html=True)
 
+    # Initialize session state for progress update functionality
     if 'progress_book_input' not in st.session_state:
         st.session_state.progress_book_input = ""
 
-    # Auto-load book if passed from edit table
+    # Auto-load book if an ID is passed from another page
     if st.session_state.progress_book_input and 'progress_book' not in st.session_state:
         book_id = st.session_state.progress_book_input.strip().upper()
         if is_valid_book_id_format(book_id):
@@ -790,25 +699,21 @@ def show_update_progress():
                 st.session_state.progress_book = book
                 st.session_state.progress_book_id = book_id
 
-    # State Initialization (removed progress_status_select)
     st.session_state.setdefault("progress_deadline_input", None)
     st.session_state.setdefault("progress_rating_input", "None")
 
-    # --- Callback: Find Book ---
+    # Callback to find a book for updating progress
     def _handle_find_book():
         st.session_state.pop("progress_book", None)
         st.session_state.pop("progress_book_id", None)
-
         book_id = st.session_state.progress_book_input.strip().upper()
         if not book_id:
             st.warning("Please enter a Book ID!")
             return
-
         if not is_valid_book_id_format(book_id):
             st.error("Invalid Book ID format!")
             st.session_state.progress_book_input = ""
             return
-
         book = get_book_details(st.session_state.user_id, book_id)
         if not book:
             st.error("Book not found!")
@@ -819,25 +724,23 @@ def show_update_progress():
         else:
             st.session_state.progress_book = book
             st.session_state.progress_book_id = book_id
-            # Reset status selection when a new book is found
             st.session_state.progress_status_select = None
 
-    # --- Callback: Update Progress ---
+    # Callback to handle the progress update logic
     def _handle_update_progress():
         book = st.session_state.progress_book
         new_status = st.session_state.progress_status_select
         
-        # Prevent update if no status is selected
         if not new_status:
             st.warning("Please select a new status to update!")
             return
 
         total_pages = int(book.get('total_pages', 1))
-        # Default pages_read to current value, then update based on status
-        pages_read = int(book.get('pages_read', 0))
+        pages_read = int(book.get('pages_read', 0)) # Default to current pages read
         deadline = st.session_state.progress_deadline_input
         rating_display = st.session_state.progress_rating_input
 
+        # Update pages read based on the new status
         if new_status.lower() == "completed":
             pages_read = total_pages
         elif new_status.lower() == "to-read":
@@ -849,93 +752,76 @@ def show_update_progress():
             st.error("Pages read cannot be greater than total pages!")
             return
 
-        # Extract numeric part from rating
-        if rating_display == "Choose an option":
-            rating_value = None
-        else:
-            try:
-                rating_value = int(str(rating_display)[0])
-            except:
-                st.warning("Invalid rating format.")
-                return
+        # Extract numeric value from the rating string (e.g., "5⭐")
+        rating_value = None if rating_display == "Choose an option" else int(str(rating_display)[0])
 
+        # Prepare the data payload for the database update
         progress_data = {
-            'total_pages': total_pages,
-            'pages_read': pages_read,
-            'status': new_status.lower(),
+            'total_pages': total_pages, 'pages_read': pages_read, 'status': new_status.lower(),
             'deadline': deadline.strftime("%Y-%m-%d") if deadline else book.get('deadline'),
             'rating': rating_value
         }
 
+        # Attempt to update the book progress in the database
         try:
             success, percent = update_book_progress_in_db(
-                st.session_state.user_id,
-                st.session_state.progress_book_id,
-                progress_data
-            )
+                st.session_state.user_id, st.session_state.progress_book_id, progress_data)
             if success:
                 st.success("Progress updated successfully!")
-                _handle_cancel_progress()
+                _handle_cancel_progress() # Clear the form
                 st.session_state.trigger_progress_rerun = True
         except Exception:
             st.error(f"Error updating progress...")
 
-    # --- Callback: Cancel ---
+    # Callback to cancel the update and clear the form
     def _handle_cancel_progress():
         st.session_state.pop("progress_book", None)
         st.session_state.pop("progress_book_id", None)
         st.session_state.progress_book_input = ""
 
-    # --- UI ---
+    # UI for finding a book to update
     st.text_input("Book ID", placeholder="e.g. B1001", key="progress_book_input")
     st.button("🔍 Find Book", on_click=_handle_find_book)
 
+    # If a book is found, display the update form
     if 'progress_book' in st.session_state:
         book = st.session_state.progress_book
         st.success(f"Updating: {book.get('title')} by {book.get('author')}")
 
-        # Add placeholder to the status selectbox. The UI below will only appear after a selection.
-        new_status = st.selectbox(
-            "New Status",
-            [None, "To-read", "Reading", "Completed"],
-            format_func=lambda x: "Choose an option" if x is None else x,
-            key="progress_status_select"
-        )
+        new_status = st.selectbox("New Status", [None, "To-read", "Reading", "Completed"],
+                                  format_func=lambda x: "Choose an option" if x is None else x,
+                                  key="progress_status_select")
 
-        # This entire block only runs AFTER the user selects a status from the dropdown above.
+        # Conditionally display inputs based on the selected status
         if new_status:
             total_pages = int(book.get('total_pages', 1))
-
-            # The "Pages Read" input is ONLY shown if the selected status is "Reading".
+            
+            # Only show "Pages Read" input if status is "Reading"
             if new_status == "Reading":
                 current_pages_read = int(book.get('pages_read', 0))
-                st.number_input("Pages Read", min_value=0,
-                                max_value=total_pages,
-                                value=current_pages_read,
-                                key="progress_pages_read_input")
+                st.number_input("Pages Read", min_value=0, max_value=total_pages,
+                                value=current_pages_read, key="progress_pages_read_input")
 
-            # The rest of the widgets (Rating, Deadline, Buttons) are shown for any selected status.
-            
-            # Rating Selector
+            # Rating selector
             star_options = ["Choose an option", "1⭐", "2⭐", "3⭐", "4⭐", "5⭐"]
             current_rating_val = book.get('rating')
             current_rating_str = f"{current_rating_val}⭐" if current_rating_val in [1,2,3,4,5] else "Choose an option"
-            st.selectbox("Rating (optional)", star_options, 
-                         index=star_options.index(current_rating_str),
+            st.selectbox("Rating (optional)", star_options, index=star_options.index(current_rating_str),
                          key="progress_rating_input")
 
-            # Deadline Selector
+            # Deadline selector
             current_deadline = book.get('deadline')
             deadline_val = datetime.strptime(current_deadline, "%Y-%m-%d").date() if current_deadline else None
             st.date_input("Deadline (optional)", value=deadline_val, key="progress_deadline_input")
 
-            # Action Buttons
+            # Action buttons
             _, col2, _, col4, _ = st.columns(5)
             with col2:
                 st.button("📈 Update", on_click=_handle_update_progress, type="primary", use_container_width=True)
             with col4:
                 st.button("❌ Cancel", on_click=_handle_cancel_progress, use_container_width=True)
 
+# Page to view upcoming and overdue book deadlines
 def show_view_deadlines():
     st.title("⏰ Your Reading Deadlines")
     st.markdown("<br>", unsafe_allow_html=True)
@@ -944,10 +830,10 @@ def show_view_deadlines():
     today = date.today()
     upcoming, overdue = [], []
     
+    # Categorize books based on their deadline status
     for book in books:
         deadline_str = book.get('deadline')
-        if not deadline_str:
-            continue
+        if not deadline_str: continue
         try:
             deadline = datetime.strptime(deadline_str, "%Y-%m-%d").date()
             if book.get('status', '').lower() != 'completed':
@@ -959,19 +845,16 @@ def show_view_deadlines():
         except:
             continue
     
+    # Display the categorized lists in two columns
     col1, col2 = st.columns(2)
-    
     with col1:
         st.subheader("📅 Upcoming Deadlines")
         st.markdown("<br>", unsafe_allow_html=True)
         if upcoming:
-            # Use st.info() to display each item in a blue box
             for title, date_str, _ in sorted(upcoming, key=lambda x: x[2]):
                 st.success(f"• {title}: Due by {date_str}")
         else:
-            # Use st.success() to match the style of the "No overdue books!" message
             st.success("No upcoming deadlines!")
-    
     with col2:
         st.subheader("⚠️ Overdue Books")
         st.markdown("<br>", unsafe_allow_html=True)
@@ -981,23 +864,20 @@ def show_view_deadlines():
         else:
             st.error("No overdue books!")
 
+# Page to archive completed books
 def show_archive_book():
     st.title("📦 Archive Book")
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- Callbacks for Archive ---
+    # Callback to find a book to archive
     def _handle_find_archive_book():
-        # Clear previous state
-        if 'archive_book' in st.session_state:
-            del st.session_state.archive_book
-        if 'archive_book_id' in st.session_state:
-            del st.session_state.archive_book_id
+        if 'archive_book' in st.session_state: del st.session_state.archive_book
+        if 'archive_book_id' in st.session_state: del st.session_state.archive_book_id
 
         book_id = st.session_state.archive_book_input.strip().upper()
         if not book_id:
             st.warning("Please enter a Book ID!")
             return
-
         if not is_valid_book_id_format(book_id):
             st.error("Invalid Book ID format!")
             st.session_state.archive_book_input = ""
@@ -1016,6 +896,7 @@ def show_archive_book():
                 st.session_state.archive_book = book
                 st.session_state.archive_book_id = book_id
 
+    # Callback to confirm and execute the archiving
     def _handle_confirm_archive():
         try:
             success = archive_single_book_in_db(st.session_state.user_id, st.session_state.archive_book_id)
@@ -1027,36 +908,35 @@ def show_archive_book():
         except Exception:
             st.error(f"Error archiving book...")
 
+    # Callback to cancel the archiving operation
     def _handle_cancel_archive():
         del st.session_state.archive_book
         del st.session_state.archive_book_id
         st.session_state.archive_book_input = ""
 
-    # --- UI Elements ---
+    # UI for finding a book to archive
     st.text_input("Book ID", placeholder="e.g. B1001", key="archive_book_input")
     st.button("🔍 Find Book", on_click=_handle_find_archive_book)
 
+    # If a book is found, show confirmation buttons
     if 'archive_book' in st.session_state:
         book = st.session_state.archive_book
         st.warning(f"Archiving: {book.get('title')} by {book.get('author')}")
-
         _, col2, _, col4, _ = st.columns(5)
         with col2:
             st.button("📦 Archive", type="primary", on_click=_handle_confirm_archive)
         with col4:
             st.button("❌ Cancel", on_click=_handle_cancel_archive)
 
-    archived_books = [
-        book for book in get_all_books_for_user(st.session_state.user_id)
-        if book.get('archived') is True
-    ]
+    # Fetch and display the list of all archived books
+    archived_books = [book for book in get_all_books_for_user(st.session_state.user_id) if book.get('archived') is True]
 
     st.title("📚 Archived Books")
     st.markdown("<br>", unsafe_allow_html=True)
-
     if archived_books:
         st.success(f"Showing {len(archived_books)} archived book(s)...")
 
+        # Display each archived book in an expander
         for book in archived_books:
             title = book.get("title", "N/A")
             author = book.get("author", "N/A")
@@ -1064,30 +944,20 @@ def show_archive_book():
 
             with st.expander(f"📘 {title} by {author}"):
                 col1, col2, col3 = st.columns([2.5, 1.5, 1.5])
-
-                with col1:
+                with col1: # Book details
                     st.markdown(f"Status: {book.get('status', 'N/A').capitalize()}")
                     st.markdown(f"Genre: {book.get('genre', 'None')}")
-                    rating = book.get('rating')
-                    rating_display = f"{rating} ⭐" if rating not in [None, 'None'] else "None"
+                    rating_display = f"{book.get('rating')} ⭐" if book.get('rating') not in [None, 'None'] else "None"
                     st.markdown(f"Rating: {rating_display}")
-                    progress = book.get("progress_percent", 0)
-                    pages_read = book.get("pages_read", 0)
-                    total_pages = book.get("total_pages", 1)
-                    progress_float = float(progress)
-                    st.progress(progress_float / 100, text=f"Progress: {pages_read}/{total_pages} pages ({progress_float:.1f}%)")
-
-                with col2:
+                    progress = float(book.get("progress_percent", 0))
+                    st.progress(progress / 100, text=f"Progress: {book.get('pages_read', 0)}/{book.get('total_pages', 1)} pages ({progress:.1f}%)")
+                with col2: # Metadata
                     st.markdown(f"Book ID: `{book_id}`")
                     tags_list = book.get("tags", [])
+                    st.markdown("Tags:" if tags_list else "Tags: N/A")
                     if tags_list:
-                        st.markdown("Tags:")
-                        tags_md = "\n".join([f"- `{tag}`" for tag in tags_list])
-                        st.markdown(tags_md)
-                    else:
-                        st.markdown("Tags: N/A")
-
-                with col3:
+                        st.markdown("\n".join([f"- `{tag}`" for tag in tags_list]))
+                with col3: # Unarchive button
                     if st.button(f"📤 Unarchive", key=f"unarchive_{book_id}", use_container_width=True):
                         try:
                             success = unarchive_single_book_in_db(st.session_state.user_id, book_id)
@@ -1098,12 +968,11 @@ def show_archive_book():
                                 st.error("Unarchive failed!")
                         except Exception:
                             st.error(f"Error...")
-
     else:
         st.info("No archived books found!")
 
+# Displays a list of books as expandable cards with edit/update/delete buttons
 def display_books_table_edit(books):
-    """Display books in a clean, card-style collapsible format (used in Reading History, Search, etc.)"""
     if not books:
         st.info("No books to display!")
         return
@@ -1114,54 +983,36 @@ def display_books_table_edit(books):
         book_id = book.get("book_id", "N/A")
 
         with st.expander(f"📘 {title} by {author}"):
-            col1, col2, col3 = st.columns([2.5, 1.5, 1.5])  # Adjust width ratios as needed
-
-            with col1:
+            col1, col2, col3 = st.columns([2.5, 1.5, 1.5])
+            with col1: # Book details
                 st.markdown(f"Status: {book.get('status', 'N/A').capitalize()}")
                 st.markdown(f"Genre: {book.get('genre', 'None')}")
-                rating = book.get('rating')
-                rating_display = f"{rating} ⭐" if rating not in [None, 'None'] else "None"
+                rating_display = f"{book.get('rating')} ⭐" if book.get('rating') not in [None, 'None'] else "None"
                 st.markdown(f"Rating: {rating_display}")
-
-                progress = book.get("progress_percent", 0)
-                pages_read = book.get("pages_read", 0)
-                total_pages = book.get("total_pages", 1)
-                try:
-                    progress_float = float(progress)
-                except:
-                    progress_float = 0.0
-
-                st.progress(progress_float / 100, text=f"Progress: {pages_read}/{total_pages} pages ({progress_float:.1f}%)")
-
-            with col2:
+                progress_float = float(book.get("progress_percent", 0.0))
+                st.progress(progress_float / 100, text=f"Progress: {book.get('pages_read', 0)}/{book.get('total_pages', 1)} pages ({progress_float:.1f}%)")
+            with col2: # Metadata
                 st.markdown(f"Book ID: `{book_id}`")
-
                 tags_list = book.get("tags", [])
+                st.markdown("Tags:" if tags_list else "Tags: None")
                 if tags_list:
-                    st.markdown("Tags:")
-                    tags_md = "\n".join([f"- `{tag}`" for tag in tags_list])
-                    st.markdown(tags_md)
-                else:
-                    st.markdown("Tags: None")
-
-            with col3:
+                    st.markdown("\n".join([f"- `{tag}`" for tag in tags_list]))
+            with col3: # Action buttons that redirect to other pages
                 if st.button(f"✏️ Edit", key=f"edit_{book_id}", use_container_width=True):
                     st.session_state.edit_book_input = book_id
                     st.session_state.selected_page = "edit"
                     st.rerun()
-
                 if st.button(f"📈 Update", key=f"progress_{book_id}", use_container_width=True):
                     st.session_state.progress_book_input = book_id
                     st.session_state.selected_page = "progress"
                     st.rerun()
-
                 if st.button(f"🗑️ Delete", key=f"delete_{book_id}", use_container_width=True):
                     st.session_state.delete_book_input = book_id
                     st.session_state.selected_page = "delete"
                     st.rerun()
 
+# Displays a list of books as expandable cards (view-only version)
 def display_books_table(books):
-    """Display books in a clean, card-style collapsible format (used in Reading History, Search, etc.)"""
     if not books:
         st.info("No books to display!")
         return
@@ -1172,57 +1023,46 @@ def display_books_table(books):
         book_id = book.get("book_id", "N/A")
 
         with st.expander(f"📘 {title} by {author}"):
-            col1, col2 = st.columns([2, 1])  # Wider left column for details
-
-            with col1:
+            col1, col2 = st.columns([2, 1])
+            with col1: # Book details
                 st.markdown(f"Status: {book.get('status', 'N/A').capitalize()}")
                 st.markdown(f"Genre: {book.get('genre', 'None')}")
-                rating = book.get('rating')
-                rating_display = f"{rating} ⭐" if rating not in [None, 'None'] else "None"
+                rating_display = f"{book.get('rating')} ⭐" if book.get('rating') not in [None, 'None'] else "None"
                 st.markdown(f"Rating: {rating_display}")
-
-                progress = book.get("progress_percent", 0)
-                pages_read = book.get("pages_read", 0)
-                total_pages = book.get("total_pages", 1)
-                try:
-                    progress_float = float(progress)
-                except:
-                    progress_float = 0.0
-
-                st.progress(progress_float / 100, text=f"Progress: {pages_read}/{total_pages} pages ({progress_float:.1f}%)")
-
-            with col2:
+                progress_float = float(book.get("progress_percent", 0.0))
+                st.progress(progress_float / 100, text=f"Progress: {book.get('pages_read', 0)}/{book.get('total_pages', 1)} pages ({progress_float:.1f}%)")
+            with col2: # Metadata
                 st.markdown(f"Book ID: `{book_id}`")
-
                 tags_list = book.get("tags", [])
+                st.markdown("Tags:" if tags_list else "Tags: None")
                 if tags_list:
-                    st.markdown("Tags:")
-                    tags_md = "\n".join([f"- `{tag}`" for tag in tags_list])
-                    st.markdown(tags_md)
-                else:
-                    st.markdown("Tags: None")
+                    st.markdown("\n".join([f"- `{tag}`" for tag in tags_list]))
 
+# Main function to control the application flow
 def main():
+    # Show a loading screen during login
     if st.session_state.get("show_loading_screen", False):
         st.markdown('<div class="loading-text">🔄 Logging you in, please wait...</div>', unsafe_allow_html=True)
         with st.spinner("Loading Dashboard..."):
             import time
-            time.sleep(2.5)
+            time.sleep(2.5) # Simulate loading time
         st.session_state.show_loading_screen = False
         st.rerun()
-
+    # Show a logout screen during logout
     elif st.session_state.get("show_logout_screen", False):
         st.markdown('<div class="loading-text">👋 Logging you out, see you soon...</div>', unsafe_allow_html=True)
         with st.spinner("Clearing session..."):
             import time
-            time.sleep(2)
+            time.sleep(2) # Simulate clearing session
         st.session_state.clear()
         st.rerun()
-
+    # If not logged in, show the login page
     elif not st.session_state.logged_in:
         show_login()
+    # If logged in, show the main application
     else:
         main_app()
 
+# Entry point of the script
 if __name__ == "__main__":
     main()
