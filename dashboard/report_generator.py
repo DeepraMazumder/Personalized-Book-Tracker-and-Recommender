@@ -12,6 +12,11 @@ def generate_pdf_summary(user_name, books, metrics, top_rated_books, genre_count
     pdf.cell(0, 10, f'Reading Summary for {user_name}', 0, 1, 'C')
     pdf.ln(5)
 
+    # --- Signature ---
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, '~ The SmartReads Team', 0, 1, 'R')  # Right-aligned signature
+    pdf.ln(5)
+
     # --- Section 1: Reading Statistics ---
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(0, 10, 'Reading Statistics', 0, 1, 'C')
@@ -104,11 +109,5 @@ def generate_pdf_summary(user_name, books, metrics, top_rated_books, genre_count
         rating_display = f"{rating}" if rating and str(rating) != 'N/A' else "N/A"
         line = f"* {title} by {author}, Status: {status}, Rating: {rating_display}"
         pdf.multi_cell(0, 6, line, 0, 'L')  # Multi-line cell for wrapping long lines
-
-    pdf.ln(10)
-
-    # --- Signature ---
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, '~ The SmartReads Team', 0, 1, 'R')  # Right-aligned signature
 
     return pdf.output(dest='S').encode('latin1')  # Return PDF as byte string
