@@ -130,7 +130,7 @@ def show_login():
         st.subheader("🔄 Returning User")
         user_id_input = st.text_input("Enter your User ID (e.g. U1001):", key="login_user_id")
         # Email input for login
-        email_login_input = st.text_input("Enter your email:", key="login_email")
+        email_login_input = st.text_input("Enter your registered email:", key="login_email")
         
         # Center the login button
         _, login_button_col, _ = st.columns([1, 1, 1])
