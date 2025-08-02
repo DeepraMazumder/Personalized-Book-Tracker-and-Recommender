@@ -112,9 +112,6 @@ def show_login():
                     text-align: center
                 }
             </style>
-            <div class="sidebar-footer">
-                Developed in July 2025
-            </div>
             """,
             unsafe_allow_html=True
         )
