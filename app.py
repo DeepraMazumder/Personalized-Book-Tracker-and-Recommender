@@ -112,6 +112,9 @@ def show_login():
                     text-align: center
                 }
             </style>
+            <div class="sidebar-footer">
+                Developed in July 2025
+            </div>
             """,
             unsafe_allow_html=True
         )
@@ -126,7 +129,8 @@ def show_login():
         st.markdown("<br>", unsafe_allow_html=True)
         st.subheader("🔄 Returning User")
         user_id_input = st.text_input("Enter your User ID (e.g. U1001):", key="login_user_id")
-        st.markdown("<br>", unsafe_allow_html=True)
+        # Email input for login
+        email_login_input = st.text_input("Enter your email:", key="login_email")
         
         # Center the login button
         _, login_button_col, _ = st.columns([1, 1, 1])
@@ -135,22 +139,28 @@ def show_login():
 
         # Handle the login logic when the button is clicked
         if login_clicked:
-            if user_id_input:
+            # Check for both User ID and Email
+            if user_id_input and email_login_input:
                 user_id_upper = user_id_input.strip().upper()
+                email_login = email_login_input.strip()
+
                 if is_valid_user_id_format(user_id_upper):
                     user_details = get_user_details(user_id_upper)
-                    if user_details:
+                    
+                    # Validate email from DB against input
+                    if user_details and user_details.get('email') == email_login:
+                        # If credentials are correct, log the user in
                         st.session_state.user_id = user_id_upper
                         st.session_state.user_name = user_details.get("name", "User")
                         st.session_state.logged_in = True
                         st.session_state.show_loading_screen = True
-                        st.rerun() # Rerun the script to show the main app
+                        st.rerun()
                     else:
-                        st.error("User ID not found!")
+                        st.error("Invalid User ID or Email!")
                 else:
                     st.error("Invalid User ID format!")
             else:
-                st.error("Please enter a User ID!")
+                st.error("Please enter both your User ID and Email!")
     
     # Column for new user registration
     with col2:
@@ -184,7 +194,7 @@ def show_login():
                     st.session_state.user_name = name
                     st.session_state.logged_in = True
                     st.session_state.show_loading_screen = True
-                    st.rerun() # Rerun the script to show the main app
+                    st.rerun()
                 else:
                     st.error("Please enter a valid email address!")
             else:
