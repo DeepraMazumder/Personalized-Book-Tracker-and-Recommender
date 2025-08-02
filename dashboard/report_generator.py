@@ -10,7 +10,6 @@ def generate_pdf_summary(user_name, books, metrics, top_rated_books, genre_count
     # --- Heading ---
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(0, 10, f'Reading Summary for {user_name}', 0, 1, 'C')
-    pdf.ln(5)
 
     # --- Signature ---
     pdf.set_font("Arial", 'B', 12)
