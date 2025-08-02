@@ -2,5 +2,4 @@ streamlit==1.47.0
 pandas>=2.0.0
 plotly==6.1.1
 fpdf==1.7.2
-boto3==1.30.0
-botocore==1.33.0
+boto3>=1.34.0
