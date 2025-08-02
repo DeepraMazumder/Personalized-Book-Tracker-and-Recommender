@@ -44,7 +44,7 @@ def generate_pdf_summary(user_name, books, metrics, top_rated_books, genre_count
     # --- Section 2: Favorite Genres ---
     if not genre_counts.empty:
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 8, 'Top 3 Favorite Genres', 0, 1, 'C')
+        pdf.cell(0, 8, 'Top Favorite Genres', 0, 1, 'C')
 
         header_widths = [20, 90, 40]
         fav_table_width = sum(header_widths)
@@ -80,7 +80,7 @@ def generate_pdf_summary(user_name, books, metrics, top_rated_books, genre_count
     # --- Section 3: Top Rated Books ---
     if not top_rated_books.empty:
         pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, 'Top 5 Rated Books', 0, 1, 'L')
+        pdf.cell(0, 10, 'Top Rated Books', 0, 1, 'L')
         pdf.set_font("Arial", '', 12)
         for _, book in top_rated_books.iterrows():
             # Encode text safely for PDF
