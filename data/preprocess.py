@@ -9,7 +9,7 @@ try:
     df.drop(columns=df.columns[0], inplace=True)
 except Exception as e:
     # Handle errors during file loading (e.g., FileNotFoundError).
-    print(f"‼️  Error loading CSV...")
+    print(f"Error loading CSV...")
     exit()
 
 # --- 2. Initial Column and Row Cleanup ---
@@ -78,6 +78,6 @@ df.to_csv('data/book_dataset.csv', index=False)
 
 # --- 9. Confirmation ---
 # Print a success message and show a sample of the cleaned data.
-print("✅ Preprocessing is complete!")
+print("Preprocessing is complete!")
 print("Here's a sample of the cleaned data:")
 print(df.head(10))

@@ -9,7 +9,7 @@ try:
     df = pd.read_csv('data/book_dataset.csv')
 # Handle the case where the file is not found.
 except FileNotFoundError:
-    print("‼️  File not found...")
+    print("File not found...")
     exit()
 
 def parse_genres(genres_str):
@@ -37,4 +37,4 @@ with open(output_json_path, 'w', encoding='utf-8') as f:
     json.dump(records, f, ensure_ascii=False, indent=2)
 
 # Print success message after conversion.
-print(f"✅ File successfully converted to JSON!")
+print(f"File successfully converted to JSON!")
