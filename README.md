@@ -36,7 +36,7 @@ Welcome to **SmartReads** - a personalized book tracking and recommendation syst
 - `app.py`: Streamlit frontend app
 - `requirements.txt`: Dependencies
 - `LICENSE`
-- `readme.txt` 
+- `README.md` 
 
 ## 🛠️ Getting Started
 
