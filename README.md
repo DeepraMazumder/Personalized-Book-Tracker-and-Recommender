@@ -12,36 +12,36 @@ Welcome to **SmartReads** - a personalized book tracking and recommendation syst
 
 ## 📂 Project Structure
 
-│── `app.py`: Streamlit frontend app
-│── `requirements.txt`: Dependencies
-│── `LICENSE`
-│── `readme.txt` 
-│
-├── config/
-│   └── `aws_config.py`: AWS configuration & credentials
-│
-├── dashboard/
-│   ├── `dashboard_cli.py`: CLI-based dashboard utilities
-│   └── `report_generator.py`: Report generation logic
-│
-├── data/
-│   ├── `book_dataset.csv`: Book dataset (raw)
-│   ├── `book_dataset.json`: Preprocessed dataset (for S3)
-│   ├── `goodreads_data.csv`: Source dataset
-│   ├── `convert.py`: Conversion utilities
-│   └── `preprocess.py`: Dataset preprocessing
-│
-├── db_module/
-│   ├── `dynamo_handler.py`: DynamoDB operations (CRUD)
-│   └── `schema_setup.py`: Table schema creation
-│
-└── reading_tracker/
-    └── `tracker.py`: Tracks user reading activity
+- config/
+   - `aws_config.py`: AWS configuration & credentials
+
+- dashboard/
+   - `dashboard_cli.py`: CLI-based dashboard utilities
+   - `report_generator.py`: Report generation logic
+
+- data/
+    - `book_dataset.csv`: Book dataset (raw)
+   - `book_dataset.json`: Preprocessed dataset (for S3)
+   - `goodreads_data.csv`: Source dataset
+   - `convert.py`: Conversion utilities
+   - `preprocess.py`: Dataset preprocessing
+
+- db_module/
+   - `dynamo_handler.py`: DynamoDB operations (CRUD)
+   - `schema_setup.py`: Table schema creation
+
+- reading_tracker/
+    - `tracker.py`: Tracks user reading activity
+
+- `app.py`: Streamlit frontend app
+- `requirements.txt`: Dependencies
+- `LICENSE`
+- `readme.txt` 
 
 ## 🛠️ Getting Started
 
-🔹 Run the App
-- Use Hosted Website: [https://smart-reads.streamlit.app/](https://smart-reads.streamlit.app/)
+You can try SmartReads instantly using our hosted Streamlit app:  
+👉 [https://smart-reads.streamlit.app/](https://smart-reads.streamlit.app/)
 
 ## 🌐 Website
 
