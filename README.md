@@ -12,7 +12,7 @@ Welcome to **SmartReads** - a personalized book tracking and recommendation syst
 
 ## 📂 Project Structure
 
-│── app.py                      - Streamlit frontend app
+│── `app.py`                      - Streamlit frontend app
 │── requirements.txt            - Dependencies
 │── Documentation.pdf           - Detailed project report & explanation
 │── readme.txt 
@@ -41,7 +41,7 @@ Welcome to **SmartReads** - a personalized book tracking and recommendation syst
 ## 🛠️ Getting Started
 
 🔹 Run the App
-- Use Hosted Website: https://smart-reads.streamlit.app/
+- Use Hosted Website: [https://smart-reads.streamlit.app/](https://smart-reads.streamlit.app/)
 
 ## 🌐 Website
 
@@ -63,7 +63,7 @@ Our system leverages two intelligent Lambda functions to deliver a personalized 
 - Fallback to globally popular books if needed  
 - Updates user profile in DynamoDB with Top 5 recommendations  
 
-### 🔔 Notification Lambda  
+### 🔔 Welcome Notification
 - Triggered by:  
   - New user registration (DynamoDB Stream)  
   - SNS subscription confirmations  
@@ -73,4 +73,4 @@ Our system leverages two intelligent Lambda functions to deliver a personalized 
 - Marks users in DynamoDB with `welcome_sent = True`  
 - Fault-tolerant with retry support via polling  
 
-Together, these ensure users are welcomed instantly and receive fresh, intelligent book recommendations in real time.  
+Together, these ensure users are welcomed instantly and receive fresh, intelligent book recommendations in real time.
